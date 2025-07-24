@@ -25,5 +25,6 @@ export const assets = {
     list_icon,
     tick_icon,
     appointments_icon,
-    earning_icon
+    earning_icon,
+    BACKEND_URL: "https://prescripto-backend-m4xi.onrender.com"
 }
