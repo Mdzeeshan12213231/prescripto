@@ -6,6 +6,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import { v2 as cloudinary } from 'cloudinary'
 import stripe from "stripe";
+import crypto from "crypto";
 
 // Gateway Initialize
 const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
@@ -73,6 +74,92 @@ const loginUser = async (req, res) => {
         else {
             res.json({ success: false, message: "Invalid credentials" })
         }
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API for forgot password
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.json({ success: false, message: 'Email is required' })
+        }
+
+        // validating email format
+        if (!validator.isEmail(email)) {
+            return res.json({ success: false, message: "Please enter a valid email" })
+        }
+
+        const user = await userModel.findOne({ email });
+
+        if (!user) {
+            return res.json({ success: false, message: "User with this email does not exist" })
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+
+        // Save reset token to user
+        await userModel.findByIdAndUpdate(user._id, {
+            resetPasswordToken: resetToken,
+            resetPasswordExpires: resetTokenExpiry
+        });
+
+        // In a real application, you would send an email here
+        // For now, we'll return the token (in production, send via email)
+        res.json({ 
+            success: true, 
+            message: 'Password reset link sent to your email',
+            resetToken: resetToken // Remove this in production
+        });
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to reset password
+const resetPassword = async (req, res) => {
+    try {
+        const { resetToken, newPassword } = req.body;
+
+        if (!resetToken || !newPassword) {
+            return res.json({ success: false, message: 'Reset token and new password are required' })
+        }
+
+        // validating strong password
+        if (newPassword.length < 8) {
+            return res.json({ success: false, message: "Please enter a strong password" })
+        }
+
+        const user = await userModel.findOne({
+            resetPasswordToken: resetToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.json({ success: false, message: "Invalid or expired reset token" })
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password and clear reset token
+        await userModel.findByIdAndUpdate(user._id, {
+            password: hashedPassword,
+            resetPasswordToken: undefined,
+            resetPasswordExpires: undefined
+        });
+
+        res.json({ success: true, message: 'Password reset successfully' });
+
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
@@ -299,5 +386,7 @@ export {
     listAppointment,
     cancelAppointment,
     paymentStripe,
-    verifyStripe
+    verifyStripe,
+    forgotPassword,
+    resetPassword
 }
