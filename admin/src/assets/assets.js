@@ -26,5 +26,5 @@ export const assets = {
     tick_icon,
     appointments_icon,
     earning_icon,
-    BACKEND_URL: "https://prescripto-ryr8-1vzu49z72-mdzeeshan12213231s-projects.vercel.app"
+    BACKEND_URL: "https://prescripto-ryr8.vercel.app"
 }
