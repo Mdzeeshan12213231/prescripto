@@ -5,6 +5,31 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import { v2 as cloudinary } from 'cloudinary';
 
+const calculateAge = (dobValue) => {
+    if (!dobValue) return null;
+    const birthDate = new Date(dobValue);
+    if (Number.isNaN(birthDate.getTime())) return null;
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age -= 1;
+    }
+
+    return age >= 0 ? age : null;
+};
+
+const generatePrescriptionId = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const sequence = String(Math.floor(Math.random() * 9000) + 1000);
+    return `PRES-${year}${month}${day}-${sequence}`;
+};
+
 // API to create prescription (Doctor only)
 const createPrescription = async (req, res) => {
     try {
@@ -26,6 +51,16 @@ const createPrescription = async (req, res) => {
             return res.json({ success: false, message: 'Missing required fields' });
         }
 
+        // Get appointment information (contains user snapshot)
+        const appointment = await appointmentModel.findById(appointmentId).select('docId userData userId');
+        if (!appointment) {
+            return res.json({ success: false, message: 'Appointment not found' });
+        }
+
+        if (appointment.docId !== docId) {
+            return res.json({ success: false, message: 'Unauthorized appointment selection' });
+        }
+
         // Get patient information
         const patient = await userModel.findById(patientId).select('name dob gender');
         if (!patient) {
@@ -33,27 +68,24 @@ const createPrescription = async (req, res) => {
         }
 
         // Get doctor information
-        const doctor = await doctorModel.findById(docId).select('name specialization');
+        const doctor = await doctorModel.findById(docId).select('name speciality');
         if (!doctor) {
             return res.json({ success: false, message: 'Doctor not found' });
         }
 
-        // Calculate patient age
-        const today = new Date();
-        const birthDate = new Date(patient.dob);
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        const patientAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+        const patientSnapshot = appointment.userData || {};
+        const patientAge = calculateAge(patient.dob) ?? calculateAge(patientSnapshot.dob) ?? 0;
 
         // Create prescription data
         const prescriptionData = {
+            prescriptionId: generatePrescriptionId(),
             patientId,
-            patientName: patient.name,
+            patientName: patient.name || patientSnapshot.name || 'Unknown',
             patientAge,
-            patientGender: patient.gender,
+            patientGender: patient.gender || patientSnapshot.gender || 'Unknown',
             doctorId: docId,
             doctorName: doctor.name,
-            doctorSpecialization: doctor.specialization,
+            doctorSpecialization: doctor.speciality || 'General',
             appointmentId,
             diagnosis,
             symptoms: symptoms || [],
@@ -111,6 +143,68 @@ const getDoctorPrescriptions = async (req, res) => {
 
         res.json({ success: true, prescriptions });
 
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// API to get doctor's appointments with patient info for prescription creation
+const getDoctorAppointmentsForPrescription = async (req, res) => {
+    try {
+        const { docId } = req.body;
+
+        const appointments = await appointmentModel.find({ 
+            docId: docId,
+            isCompleted: true,
+            cancelled: false
+        }).sort({ date: -1 });
+
+        // Use patient snapshot embedded in appointment record for reliability.
+        const appointmentsWithPatients = appointments.map(appointment => {
+            const patient = appointment.userData || {};
+            return {
+                _id: appointment._id,
+                slotDate: appointment.slotDate,
+                slotTime: appointment.slotTime,
+                patientId: appointment.userId,
+                patientName: patient.name || 'Unknown',
+                patientEmail: patient.email || '',
+                patientDob: patient.dob || '',
+                patientGender: patient.gender || ''
+            };
+        });
+
+        res.json({ success: true, appointments: appointmentsWithPatients });
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Test API to manually mark an appointment as completed (for debugging)
+const testCompleteAppointment = async (req, res) => {
+    try {
+        const { appointmentId } = req.body;
+        
+        const appointment = await appointmentModel.findById(appointmentId);
+        if (!appointment) {
+            return res.json({ success: false, message: 'Appointment not found' });
+        }
+        
+        const updatedAppointment = await appointmentModel.findByIdAndUpdate(
+            appointmentId,
+            { isCompleted: true },
+            { new: true }
+        );
+        
+        res.json({ 
+            success: true, 
+            message: 'Appointment marked as completed',
+            appointment: updatedAppointment
+        });
+        
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: error.message });
@@ -452,6 +546,7 @@ export {
     createPrescription,
     getPatientPrescriptions,
     getDoctorPrescriptions,
+    getDoctorAppointmentsForPrescription,
     getAllPrescriptions,
     getPrescriptionDetails,
     updatePrescription,
@@ -461,5 +556,6 @@ export {
     getAllTestResults,
     getTestResultDetails,
     updateTestResult,
-    getPrescriptionStats
+    getPrescriptionStats,
+    testCompleteAppointment
 }; 

@@ -13,7 +13,7 @@ const connectDB = async () => {
         const options = {
             dbName: 'prescripto',
             maxPoolSize: 10,
-            serverSelectionTimeoutMS: 5000,
+            serverSelectionTimeoutMS: 15000,
             socketTimeoutMS: 45000,
         };
 

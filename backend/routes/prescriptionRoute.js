@@ -3,6 +3,7 @@ import {
     createPrescription,
     getPatientPrescriptions,
     getDoctorPrescriptions,
+    getDoctorAppointmentsForPrescription,
     getAllPrescriptions,
     getPrescriptionDetails,
     updatePrescription,
@@ -12,7 +13,8 @@ import {
     getAllTestResults,
     getTestResultDetails,
     updateTestResult,
-    getPrescriptionStats
+    getPrescriptionStats,
+    testCompleteAppointment
 } from '../controllers/prescriptionController.js';
 import upload from '../middleware/multer.js';
 import authUser from '../middleware/authUser.js';
@@ -31,6 +33,12 @@ prescriptionRouter.get("/patient", authUser, getPatientPrescriptions);
 
 // Get prescriptions by doctor (Doctor)
 prescriptionRouter.get("/doctor", authDoctor, getDoctorPrescriptions);
+
+// Get doctor's appointments for prescription creation (Doctor)
+prescriptionRouter.get("/doctor/appointments", authDoctor, getDoctorAppointmentsForPrescription);
+
+// Test API to manually complete appointment (for debugging)
+prescriptionRouter.post("/test/complete-appointment", authDoctor, testCompleteAppointment);
 
 // Get all prescriptions (Admin)
 prescriptionRouter.get("/all", authAdmin, getAllPrescriptions);

@@ -26,5 +26,5 @@ export const assets = {
     tick_icon,
     appointments_icon,
     earning_icon,
-    BACKEND_URL: "https://prescripto-ryr8.vercel.app"
+    BACKEND_URL: "http://localhost:4000"
 }

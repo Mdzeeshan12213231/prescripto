@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets';
@@ -11,9 +11,38 @@ const DoctorContextProvider = (props) => {
     const backendUrl = assets.BACKEND_URL
 
     const [dToken, setDToken] = useState(localStorage.getItem('dToken') ? localStorage.getItem('dToken') : '')
+    const [docId, setDocId] = useState('')
     const [appointments, setAppointments] = useState([])
     const [dashData, setDashData] = useState(false)
     const [profileData, setProfileData] = useState(false)
+
+    // Function to extract docId from JWT token
+    const extractDocIdFromToken = (token) => {
+        if (!token) return '';
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const payload = JSON.parse(jsonPayload);
+            return payload.id || '';
+        } catch (error) {
+            console.log('Error extracting docId from token:', error);
+            return '';
+        }
+    };
+
+    // Update docId when dToken changes
+    useEffect(() => {
+        if (dToken) {
+            const extractedDocId = extractDocIdFromToken(dToken);
+            setDocId(extractedDocId);
+            console.log('Extracted docId:', extractedDocId);
+        } else {
+            setDocId('');
+        }
+    }, [dToken]);
 
     // Getting Doctor appointment data from Database using API
     const getAppointments = async () => {
@@ -40,6 +69,12 @@ const DoctorContextProvider = (props) => {
             const { data } = await axios.get(backendUrl + '/api/doctor/profile', { headers: { dToken } })
             console.log(data.profileData)
             setProfileData(data.profileData)
+            
+            // Set docId from profile data
+            if (data.success && data.profileData && data.profileData._id) {
+                setDocId(data.profileData._id);
+                console.log('Set docId from profile:', data.profileData._id);
+            }
 
         } catch (error) {
             console.log(error)
@@ -113,7 +148,7 @@ const DoctorContextProvider = (props) => {
     }
 
     const value = {
-        dToken, setDToken, backendUrl,
+        dToken, setDToken, docId, backendUrl,
         appointments,
         getAppointments,
         cancelAppointment,
