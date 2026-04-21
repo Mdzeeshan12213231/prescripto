@@ -10,6 +10,10 @@ import Appointment from './pages/Appointment'
 import MyAppointments from './pages/MyAppointments'
 import MyProfile from './pages/MyProfile'
 import MyPrescriptions from './pages/MyPrescriptions'
+import MyReminders from './pages/MyReminders'
+import GuidedExercises from './pages/GuidedExercises'
+import MentalCheckins from './pages/MentalCheckins'
+import HealthReport from './pages/HealthReport'
 import Footer from './components/Footer'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -31,6 +35,10 @@ const App = () => {
         <Route path='/my-appointments' element={<MyAppointments />} />
         <Route path='/my-profile' element={<MyProfile />} />
         <Route path='/my-prescriptions' element={<MyPrescriptions />} />
+        <Route path='/my-reminders' element={<MyReminders />} />
+        <Route path='/guided-exercises' element={<GuidedExercises />} />
+        <Route path='/mental-checkins' element={<MentalCheckins />} />
+        <Route path='/health-report' element={<HealthReport />} />
         <Route path='/verify' element={<Verify />} />
       </Routes>
       <Footer />

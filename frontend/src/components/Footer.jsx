@@ -1,9 +1,34 @@
-import React from 'react'
+import React, { useContext, useState } from 'react'
 import { assets } from '../assets/assets'
+import { AppContext } from '../context/AppContext'
 
 const Footer = () => {
+  const { clinicBanners } = useContext(AppContext)
+  const [selectedBanner, setSelectedBanner] = useState(null)
+  const scrollingBanners = clinicBanners.length > 0 ? [...clinicBanners, ...clinicBanners] : []
+
   return (
     <div className='md:mx-10'>
+      {clinicBanners.length > 0 && (
+        <div className='mt-8 mb-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 py-3'>
+          <div className='flex w-max animate-[clinic-scroll_28s_linear_infinite] gap-4 px-4'>
+            {scrollingBanners.map((banner, index) => (
+              <button
+                key={`${banner._id}-${index}`}
+                type='button'
+                onClick={() => setSelectedBanner(banner.image)}
+                className='rounded-lg border border-slate-200 bg-white overflow-hidden cursor-zoom-in transition-transform duration-300 hover:scale-95'
+              >
+                <img
+                  src={banner.image}
+                  alt='Clinic'
+                  className='h-20 w-40 md:h-24 md:w-52 object-cover'
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className='flex flex-col sm:grid grid-cols-[3fr_1fr_1fr] gap-14 my-10  mt-40 text-sm'>
 
         <div>
@@ -35,6 +60,36 @@ const Footer = () => {
         <hr />
         <p className='py-5 text-sm text-center'>Copyright 2024 @ Prescripto.com - All Right Reserved.</p>
       </div>
+
+      <style>{`
+        @keyframes clinic-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+
+      {selectedBanner && (
+        <div
+          className='fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4'
+          onClick={() => setSelectedBanner(null)}
+        >
+          <div className='relative max-w-5xl w-full'>
+            <button
+              type='button'
+              onClick={() => setSelectedBanner(null)}
+              className='absolute -top-10 right-0 text-white text-sm bg-white/20 rounded-full px-3 py-1 hover:bg-white/30'
+            >
+              Close
+            </button>
+            <img
+              src={selectedBanner}
+              alt='Clinic banner preview'
+              className='w-full max-h-[80vh] object-contain rounded-xl bg-white'
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   )

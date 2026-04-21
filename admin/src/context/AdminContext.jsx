@@ -15,6 +15,7 @@ const AdminContextProvider = (props) => {
     const [appointments, setAppointments] = useState([])
     const [doctors, setDoctors] = useState([])
     const [dashData, setDashData] = useState(false)
+    const [clinicBanners, setClinicBanners] = useState([])
 
     // Getting all Doctors data from Database using API
     const getAllDoctors = async () => {
@@ -112,6 +113,76 @@ const AdminContextProvider = (props) => {
 
     }
 
+    const getClinicBanners = async () => {
+        try {
+            const { data } = await axios.get(backendUrl + '/api/admin/clinic-banner/list', { headers: { aToken } })
+            if (data.success) {
+                setClinicBanners(data.banners)
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+        }
+    }
+
+    const addClinicBanner = async (imageFile) => {
+        try {
+            const formData = new FormData()
+            formData.append('image', imageFile)
+            const { data } = await axios.post(backendUrl + '/api/admin/clinic-banner/add', formData, { headers: { aToken } })
+            if (data.success) {
+                toast.success(data.message)
+                getClinicBanners()
+            } else {
+                toast.error(data.message)
+            }
+            return data
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+            return { success: false }
+        }
+    }
+
+    const toggleClinicBanner = async (bannerId) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/admin/clinic-banner/toggle', { bannerId }, { headers: { aToken } })
+            if (data.success) {
+                toast.success(data.message)
+                getClinicBanners()
+            } else {
+                toast.error(data.message)
+            }
+            return data
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+            return { success: false }
+        }
+    }
+
+    const replaceClinicBannerImage = async (bannerId, imageFile) => {
+        try {
+            const formData = new FormData()
+            formData.append('bannerId', bannerId)
+            formData.append('image', imageFile)
+            const { data } = await axios.post(backendUrl + '/api/admin/clinic-banner/replace', formData, { headers: { aToken } })
+            if (data.success) {
+                toast.success(data.message)
+                getClinicBanners()
+            } else {
+                toast.error(data.message)
+            }
+            return data
+        } catch (error) {
+            console.log(error)
+            toast.error(error.message)
+            return { success: false }
+        }
+    }
+
     const value = {
         aToken, setAToken,
         doctors,
@@ -121,7 +192,12 @@ const AdminContextProvider = (props) => {
         getAllAppointments,
         getDashData,
         cancelAppointment,
-        dashData
+        dashData,
+        clinicBanners,
+        getClinicBanners,
+        addClinicBanner,
+        toggleClinicBanner,
+        replaceClinicBannerImage
     }
 
     return (

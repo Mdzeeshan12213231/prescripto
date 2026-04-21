@@ -49,6 +49,10 @@ const Navbar = () => {
                   <p onClick={() => navigate('/my-profile')} className='hover:text-black cursor-pointer'>My Profile</p>
                   <p onClick={() => navigate('/my-appointments')} className='hover:text-black cursor-pointer'>My Appointments</p>
                   <p onClick={() => navigate('/my-prescriptions')} className='hover:text-black cursor-pointer'>My Prescriptions</p>
+                  <p onClick={() => navigate('/my-reminders')} className='hover:text-black cursor-pointer'>My Reminders</p>
+                  <p onClick={() => navigate('/guided-exercises')} className='hover:text-black cursor-pointer'>Guided Exercises</p>
+                  <p onClick={() => navigate('/mental-checkins')} className='hover:text-black cursor-pointer'>Mental Check-ins</p>
+                  <p onClick={() => navigate('/health-report')} className='hover:text-black cursor-pointer'>Weekly Health Report</p>
                   <p onClick={logout} className='hover:text-black cursor-pointer'>Logout</p>
                 </div>
               </div>
